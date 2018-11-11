@@ -10,7 +10,7 @@ import (
 func RegisterPeer(ctx *gin.Context) {
 	peerID := ctx.Param("id")
 	address := ctx.Request.RemoteAddr
-	peerName := ctx.Param("name")
+	peerName := ctx.Query("peer_name")
 
 	network := models.GetCTXNetwork(ctx)
 	peer := network.GetPeerByID(peerID)

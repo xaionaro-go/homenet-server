@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 
 	"github.com/pkg/errors"
 )
@@ -37,8 +39,14 @@ func New(urlRoot, passwordHash string) *api {
 	}
 }
 
-func (api *api) query(result answer, method, uri string) (int, error) {
-	req, err := http.NewRequest(method, api.urlRoot+uri, nil)
+func (api *api) query(result answer, method, uri string, options ...map[string]interface{}) (int, error) {
+	v := url.Values{}
+	if len(options) >= 1 {
+		for paramName, paramValue := range options[0] {
+			v.Add(paramName, fmt.Sprintf("%v", paramValue))
+		}
+	}
+	req, err := http.NewRequest(method, api.urlRoot+uri+"?"+v.Encode(), nil)
 	if err != nil {
 		return 0, err
 	}
@@ -60,16 +68,16 @@ func (api *api) query(result answer, method, uri string) (int, error) {
 	return resp.StatusCode, api.wrapResultError(result.GetErrorDescription())
 }
 
-func (api *api) GET(result answer, uri string) (int, error) {
-	return api.query(result, `GET`, uri)
+func (api *api) GET(result answer, uri string, options ...map[string]interface{}) (int, error) {
+	return api.query(result, `GET`, uri, options...)
 }
 
-func (api *api) PUT(result answer, uri string) (int, error) {
-	return api.query(result, `PUT`, uri)
+func (api *api) PUT(result answer, uri string, options ...map[string]interface{}) (int, error) {
+	return api.query(result, `PUT`, uri, options...)
 }
 
-func (api *api) DELETE(result answer, uri string) (int, error) {
-	return api.query(result, `DELETE`, uri)
+func (api *api) DELETE(result answer, uri string, options ...map[string]interface{}) (int, error) {
+	return api.query(result, `DELETE`, uri, options...)
 }
 
 func (api *api) wrapResultError(errorDescription string) error {

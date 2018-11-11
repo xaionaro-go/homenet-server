@@ -2,7 +2,7 @@ package models
 
 import (
 	"net"
-	"strconv"
+	//"strconv"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -12,7 +12,6 @@ type peer struct {
 	XxX_ID   string `json:"id"`
 	XxX_Name string `json:"name"`
 	XxX_Host net.IP `json:"host"`
-	XxX_Port uint16 `json:"port"`
 
 	network *network
 }
@@ -44,16 +43,17 @@ func (p *peer) SetNetwork(net *network) {
 }
 
 func (p *peer) SetAddressByString(address string) {
-	host, portString, err := net.SplitHostPort(address)
+	//host, portString, err := net.SplitHostPort(address)
+	host, _, err := net.SplitHostPort(address)
 	if err != nil {
 		logrus.Panicf("This shouldn't happened #0 (%v): %v", address, err)
 	}
 	p.XxX_Host = net.ParseIP(host)
-	port64, err := strconv.ParseInt(portString, 10, 16)
+	/*port64, err := strconv.ParseInt(portString, 10, 17)
 	if err != nil {
 		logrus.Panicf("This shouldn't happened #1 (%v): %v", portString, err)
 	}
-	p.XxX_Port = uint16(port64)
+	p.XxX_Port = uint16(port64)*/
 }
 
 func (p *peer) Save() error {
