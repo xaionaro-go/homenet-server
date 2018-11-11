@@ -38,7 +38,7 @@ func New(urlRoot, passwordHash string) *api {
 }
 
 func (api *api) query(result answer, method, uri string) (int, error) {
-	req, err := http.NewRequest("GET", api.urlRoot+uri, nil)
+	req, err := http.NewRequest(method, api.urlRoot+uri, nil)
 	if err != nil {
 		return 0, err
 	}
