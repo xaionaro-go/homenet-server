@@ -32,6 +32,10 @@ func Init(newStorageDir string) {
 	}
 	storageDir = newStorageDir
 
+	for typeName, storage := range storages.ToSTDMap() {
+		restore(storage.(atomicmap.Map), typeName.(string))
+	}
+
 	go savingQueueHandler()
 	go periodicallySaveEverything()
 }
@@ -46,9 +50,15 @@ func savingQueueHandler() {
 		<-ticker.C
 		hasAnythingToSave := false
 		{
-			var ok bool
-			for ; ok; _, ok = <-savingQueue {
-				hasAnythingToSave = true
+			for {
+				select {
+				case <-savingQueue:
+					fmt.Println("checkQueue: found")
+					hasAnythingToSave = true
+					continue
+				default:
+				}
+				break
 			}
 		}
 
@@ -91,8 +101,8 @@ func Get(sample iface.Object) atomicmap.Map {
 	switch err {
 	case nil:
 	case atomicmap.NotFound:
+		gob.Register(sample)
 		storage = atomicmap.New()
-		err := restore(storage.(atomicmap.Map), sampleTypeName)
 		if err != nil {
 			logrus.Errorf("Cannot restore the data for %T: %v", sample, err)
 		}

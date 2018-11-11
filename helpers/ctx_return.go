@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/Sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 )
 
 func ReturnSuccess(ctx *gin.Context, data interface{}) {
@@ -18,13 +18,13 @@ func ReturnSuccess(ctx *gin.Context, data interface{}) {
 
 func ReturnError(ctx *gin.Context, err error) {
 	switch err.(type) {
-	case interface{IsNotFound()}:
+	case interface{ IsNotFound() }:
 		ctx.JSON(http.StatusNotFound, map[string]interface{}{
 			"status":            "error",
 			"error_type":        "not_found",
 			"error_description": err.Error(),
 		})
-	case interface{IsBadRequest()}:
+	case interface{ IsBadRequest() }:
 		ctx.JSON(http.StatusBadRequest, map[string]interface{}{
 			"status":            "error",
 			"error_type":        "bad_request",
