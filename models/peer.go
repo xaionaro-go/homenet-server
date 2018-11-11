@@ -2,11 +2,18 @@ package models
 
 import (
 	"net"
+	"strconv"
+
+	"github.com/Sirupsen/logrus"
 )
 
 type peer struct {
-	id      string
-	address net.IP
+	// this is supposed to be private (non-changable directly from an outside code) but serializable variables. So they're prefixed with "XxX_" to remind users to do not access them directly
+	XxX_ID   string `json:"id"`
+	XxX_Name string `json:"name"`
+	XxX_Host net.IP `json:"host"`
+	XxX_Port uint16 `json:"port"`
+
 	network *network
 }
 
@@ -14,17 +21,21 @@ type PeerT = peer
 
 func NewPeer(id string) *peer {
 	return &peer{
-		id: id,
+		XxX_ID: id,
 	}
 }
 
 type Peers []*peer
 
 func (p *peer) GetID() string {
-	return p.id
+	return p.XxX_ID
 }
 func (p *peer) IGetID() interface{} {
 	return p.GetID()
+}
+
+func (p *peer) SetName(name string) {
+	p.XxX_Name = name
 }
 
 func (p *peer) SetNetwork(net *network) {
@@ -32,8 +43,17 @@ func (p *peer) SetNetwork(net *network) {
 	net.appendPeerIfNotExists(p)
 }
 
-func (p *peer) SetAddress(address net.IP) {
-	p.address = address
+func (p *peer) SetAddressByString(address string) {
+	host, portString, err := net.SplitHostPort(address)
+	if err != nil {
+		logrus.Panicf("This shouldn't happened #0 (%v): %v", address, err)
+	}
+	p.XxX_Host = net.ParseIP(host)
+	port64, err := strconv.ParseInt(portString, 10, 16)
+	if err != nil {
+		logrus.Panicf("This shouldn't happened #1 (%v): %v", portString, err)
+	}
+	p.XxX_Port = uint16(port64)
 }
 
 func (p *peer) Save() error {

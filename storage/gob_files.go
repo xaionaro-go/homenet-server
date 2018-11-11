@@ -103,9 +103,6 @@ func Get(sample iface.Object) atomicmap.Map {
 	case atomicmap.NotFound:
 		gob.Register(sample)
 		storage = atomicmap.New()
-		if err != nil {
-			logrus.Errorf("Cannot restore the data for %T: %v", sample, err)
-		}
 		storages.Set(sampleTypeName, storage)
 	default:
 		logrus.Errorf("Unexpected error from storages.Get(): %v", err)
