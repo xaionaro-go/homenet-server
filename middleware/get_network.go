@@ -13,8 +13,8 @@ func GetNetwork() gin.HandlerFunc {
 		passwordHash := ctx.Param("password_hash")
 
 		net, err := models.Network().Get(netID)
-		if err != nil {
-			returnError(ctx, errors.NewGetObject(models.Network, netID, err))
+		if net == nil || err != nil {
+			returnError(ctx, errors.NewGetObject(models.Network(), netID, err))
 			return
 		}
 

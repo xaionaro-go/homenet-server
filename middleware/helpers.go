@@ -12,4 +12,5 @@ func returnSuccess(ctx *gin.Context, data interface{}) {
 
 func returnError(ctx *gin.Context, err error) {
 	helpers.ReturnError(ctx, err)
+	ctx.Abort()
 }

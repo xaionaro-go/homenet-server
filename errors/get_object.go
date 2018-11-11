@@ -12,7 +12,10 @@ type GetObjectInvalidRequest struct {
 }
 
 type GetObjectNotFound struct {
-	GetObjectInvalidRequest
+	BadRequest
+}
+
+func (e GetObjectNotFound) IsNotFound() {
 }
 
 func NewGetObjectNotFound(model iface.Model, id interface{}, additionalInfo ...interface{}) (result GetObjectNotFound) {
