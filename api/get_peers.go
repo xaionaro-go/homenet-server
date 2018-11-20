@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 
+	"github.com/xaionaro-go/errors"
+
 	"github.com/xaionaro-go/homenet-server/models"
 )
 
@@ -14,5 +16,5 @@ type getPeersAnswer struct {
 func (api *api) GetPeers(networkID string) (int, models.Peers, error) {
 	var answer getPeersAnswer
 	statusCode, err := api.GET(&answer, fmt.Sprintf("%s/peers", networkID))
-	return statusCode, answer.Result, err
+	return statusCode, answer.Result, errors.Wrap(err)
 }

@@ -7,7 +7,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/pkg/errors"
+	"github.com/xaionaro-go/errors"
 )
 
 type api struct {
@@ -39,7 +39,9 @@ func New(urlRoot, passwordHash string) *api {
 	}
 }
 
-func (api *api) query(result answer, method, uri string, options ...map[string]interface{}) (int, error) {
+func (api *api) query(result answer, method, uri string, options ...map[string]interface{}) (resultStatusCode int, resultErr error) {
+	defer func() { resultErr = errors.Wrap(resultErr) }()
+
 	v := url.Values{}
 	if len(options) >= 1 {
 		for paramName, paramValue := range options[0] {

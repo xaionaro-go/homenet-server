@@ -3,6 +3,8 @@ package api
 import (
 	"fmt"
 
+	"github.com/xaionaro-go/errors"
+
 	"github.com/xaionaro-go/homenet-server/models"
 )
 
@@ -18,5 +20,5 @@ func (api *api) RegisterPeer(networkID, peerID, peerName string) (int, models.Pe
 		params["peer_name"] = peerName
 	}
 	statusCode, err := api.PUT(&answer, fmt.Sprintf("%s/peers/%s", networkID, peerID), params)
-	return statusCode, answer.Result, err
+	return statusCode, answer.Result, errors.Wrap(err)
 }
