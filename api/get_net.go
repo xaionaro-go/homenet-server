@@ -15,7 +15,7 @@ type getNetAnswer struct {
 
 func (api *api) GetNet(networkID string) (int, *models.NetworkT, error) {
 	if len(networkID) == 0 {
-		return 0, nil, errors.InvalidArguments.New("networkID cannot be empty")
+		return 0, nil, networkIDCannotBeEmpty.Wrap()
 	}
 
 	var answer getNetAnswer

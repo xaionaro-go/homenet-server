@@ -10,6 +10,11 @@ import (
 	"github.com/xaionaro-go/errors"
 )
 
+var (
+	networkIDCannotBeEmpty = errors.InvalidArguments.New("networkID cannot be empty")
+	peerIDCannotBeEmpty = errors.InvalidArguments.New("peerID cannot be empty")
+)
+
 type api struct {
 	urlRoot      string
 	passwordHash string

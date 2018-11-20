@@ -14,6 +14,10 @@ type getPeersAnswer struct {
 }
 
 func (api *api) GetPeers(networkID string) (int, models.Peers, error) {
+	if len(networkID) == 0 {
+		return 0, nil, networkIDCannotBeEmpty.Wrap()
+	}
+
 	var answer getPeersAnswer
 	statusCode, err := api.GET(&answer, fmt.Sprintf("%s/peers", networkID))
 	return statusCode, answer.Result, errors.Wrap(err)
