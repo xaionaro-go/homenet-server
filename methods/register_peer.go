@@ -19,7 +19,10 @@ func RegisterPeer(ctx *gin.Context) {
 	}
 
 	peer.SetAddressByString(address)
-	peer.SetNetwork(network)
+	if err := peer.SetNetwork(network); err != nil {
+		returnError(ctx, errors.NewCannotSave(peer, err))
+		return
+	}
 	if peerName != "" {
 		peer.SetName(peerName)
 	}

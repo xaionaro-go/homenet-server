@@ -47,8 +47,8 @@ func (p *peer) SetName(name string) {
 func (p *peer) SetNetwork(net *network) error {
 	p.network = net
 
-	net.AppendPeerIfNotExists(p)
-	return nil
+	_, err := net.AppendPeerIfNotExists(p)
+	return err
 }
 
 func (p *peer) SetAddressByString(address string) {
