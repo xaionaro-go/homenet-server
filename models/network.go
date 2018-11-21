@@ -2,6 +2,7 @@ package models
 
 import (
 	"database/sql"
+	"sync"
 
 	"github.com/Sirupsen/logrus"
 
@@ -14,12 +15,19 @@ import (
 	"github.com/xaionaro-go/homenet-server/storage"
 )
 
-type network struct {
+type networkInternals struct {
 	// this is supposed to be private (non-changable directly from an outside code) but serializable variables. So they're prefixed with "XxX_" to remind users to do not access them directly
 	XxX_ID           string `json:"id"`
 	XxX_PasswordHash string `json:"password_hash"`
 
-	peers Peers
+	peers       Peers
+	intAliasMap atomicmap.Map
+}
+
+type network struct {
+	mutex sync.Mutex
+
+	networkInternals
 }
 
 type NetworkT = network
@@ -31,41 +39,87 @@ func NewNetwork(id string) (*network, error) {
 		return nil, errors.NewAlreadyExists(oldNet)
 	}
 	newNet := &network{
-		XxX_ID: id,
+		networkInternals: networkInternals{
+			XxX_ID:      id,
+			intAliasMap: atomicmap.New(),
+		},
 	}
 	Network().Set(newNet)
 	return newNet, nil
 }
 
-func (net *network) GetPasswordHash() string {
+func (net *network) Lock(fn func(*networkInternals)) {
+	net.mutex.Lock()
+	defer func() {
+		if r := recover(); r != nil {
+			net.mutex.Unlock()
+		}
+	}() // defer is slow, so to unlock the network earlier we try to unlock it outside of the defer func. However if we got a panic then we need to recover and to unlock the network.
+	fn(&net.networkInternals)
+	net.mutex.Unlock()
+}
+
+func (net *networkInternals) GetPasswordHash() string {
 	return net.XxX_PasswordHash
 }
-
-func (net *network) GetID() string {
-	return net.XxX_ID
+func (net *network) GetPasswordHash() (result string) {
+	net.Lock(func(net *networkInternals) {
+		result = net.GetPasswordHash()
+	})
+	return
 }
 
+func (net *networkInternals) GetID() string {
+	return net.XxX_ID
+}
+func (net *networkInternals) IGetID() interface{} {
+	return net.GetID()
+}
+func (net *network) GetID() (result string) {
+	net.Lock(func(net *networkInternals) {
+		result = net.GetID()
+	})
+	return
+}
 func (net *network) IGetID() interface{} {
 	return net.GetID()
 }
 
-func (net *network) SetPasswordHash(newPasswordHash string) *network {
+func (net *networkInternals) SetPasswordHash(newPasswordHash string) *networkInternals {
 	// Yes we double-hashing the password:
 	// - The first time on the client side.
 	// - The second time on our side.
 	net.XxX_PasswordHash = string(helpers.Hash([]byte(newPasswordHash)))
 	return net
 }
-
-func (net *network) CheckPasswordHash(newPasswordHash string) bool {
-	return helpers.CheckHash([]byte(net.XxX_PasswordHash), []byte(newPasswordHash))
+func (net *network) SetPasswordHash(newPasswordHash string) *network {
+	net.Lock(func(net *networkInternals) {
+		net.SetPasswordHash(newPasswordHash)
+	})
+	return net
 }
 
-func (net *network) GetPeers() Peers {
+func (net *networkInternals) CheckPasswordHash(passwordHash string) bool {
+	return helpers.CheckHash([]byte(net.GetPasswordHash()), []byte(passwordHash))
+}
+func (net *network) CheckPasswordHash(passwordHash string) (result bool) {
+	net.Lock(func(net *networkInternals) {
+		result = net.CheckPasswordHash(passwordHash)
+	})
+	return
+}
+
+func (net *networkInternals) GetPeers() Peers {
 	return net.peers
 }
+func (net *network) GetPeers() (result Peers) {
+	net.Lock(func(net *networkInternals) {
+		result = net.GetPeers()
+	})
+	return
+}
 
-func (net *network) GetPeerByID(peerID string) *peer {
+func (net *networkInternals) GetPeerByID(peerID string) *peer {
 	for _, peer := range net.peers {
 		if peer.GetID() == peerID {
 			return peer
@@ -73,26 +127,100 @@ func (net *network) GetPeerByID(peerID string) *peer {
 	}
 	return nil
 }
+func (net *network) GetPeerByID(peerID string) (result *peer) {
+	net.Lock(func(net *networkInternals) {
+		result = net.GetPeerByID(peerID)
+	})
+	return
+}
 
 func (net *network) SaveToDisk() error {
-	storage.GetSavingQueue() <- &[]network{*net}[0] // copy and send to the queue
+	net.Lock(func(net *networkInternals) {
+		storage.GetSavingQueue() <- &[]networkInternals{*net}[0] // copy and send to the queue
+	})
 	return nil
 }
 
-func (net *network) appendPeerIfNotExists(peer *peer) bool {
+func (net *networkInternals) PeersLimit() uint32 {
+	return (1 << 8) - 5
+}
+func (net *network) PeersLimit() uint32 {
+	return net.PeersLimit()
+}
+
+func (net *networkInternals) PeersCount() uint32 {
+	return uint32(len(net.GetPeers()))
+}
+func (net *network) peersCount() (result uint32) {
+	net.Lock(func(net *networkInternals) {
+		result = net.PeersCount()
+	})
+	return
+}
+
+func (net *networkInternals) AppendPeerIfNotExists(peer *peer) (bool, error) {
+	if net.PeersCount() >= net.PeersLimit() {
+		return false, errors.NewTooManyPeers(net).Wrap()
+	}
+
 	oldPeer := net.GetPeerByID(peer.GetID())
 	if oldPeer != nil {
 		if oldPeer != peer { // two different peers with the same ID? Shouldn't be so
-			logrus.Errorf("There already exsists another peer with the same ID. Cannot add to the network.")
+			return false, errors.NewPeerIDIsBusy(peer.GetID(), net).Wrap()
 		}
-		return false
+		return false, nil // already exists, not adding, but no error
+	}
+
+	if peer.GetIntAlias() == 0 {
+		peer.SetIntAlias(net.FindFreePeerIntAlias())
+	} else {
+		anotherPeer := net.GetPeerByIntAlias(peer.GetIntAlias())
+		if anotherPeer != nil {
+			return false, errors.NewIntAliasIsBusy(peer.GetIntAlias(), net).Wrap()
+		}
 	}
 
 	net.peers = append(net.peers, peer)
-	return true
+	net.intAliasMap.Set(peer.GetIntAlias(), peer)
+	return true, nil
 }
 
-func (net *network) RemovePeer(peer *peer) bool {
+func (net *network) AppendPeerIfNotExists(peer *peer) (result0 bool, result1 error) {
+	net.Lock(func(net *networkInternals) {
+		result0, result1 = net.AppendPeerIfNotExists(peer)
+	})
+	return
+}
+
+func (net *networkInternals) FindFreePeerIntAlias() uint32 {
+	for intAlias := uint32(1); intAlias < net.PeersLimit(); intAlias++ {
+		if net.GetPeerByIntAlias(intAlias) == nil {
+			return intAlias
+		}
+	}
+	return 0 // not found
+}
+func (net *network) FindFreePeerIntAlias() (result uint32) {
+	net.Lock(func(net *networkInternals) {
+		result = net.FindFreePeerIntAlias()
+	})
+	return
+}
+
+func (net *networkInternals) GetPeerByIntAlias(intAlias uint32) *peer {
+	if p, err := net.intAliasMap.Get(intAlias); err == nil {
+		return p.(*peer)
+	}
+	return nil
+}
+func (net *network) GetPeerByIntAlias(intAlias uint32) (result *peer) {
+	net.Lock(func(net *networkInternals) {
+		result = net.GetPeerByIntAlias(intAlias)
+	})
+	return
+}
+
+func (net *networkInternals) RemovePeer(peer *peer) bool {
 	if len(net.peers) == 0 {
 		return false
 	}
@@ -123,8 +251,14 @@ func (net *network) RemovePeer(peer *peer) bool {
 	net.peers = newPeers
 	return true
 }
+func (net *network) RemovePeer(peer *peer) (result bool) {
+	net.Lock(func(net *networkInternals) {
+		result = net.RemovePeer(peer)
+	})
+	return
+}
 
-func (net *network) RemovePeerByID(peerID string) bool {
+func (net *networkInternals) RemovePeerByID(peerID string) bool {
 	peer := net.GetPeerByID(peerID)
 	if peer == nil {
 		return false
@@ -134,6 +268,12 @@ func (net *network) RemovePeerByID(peerID string) bool {
 		logrus.Errorf("(*network).RemovePeerByID(): Shouldn't happened")
 	}
 	return result
+}
+func (net *network) RemovePeerByID(peerID string) (result bool) {
+	net.Lock(func(net *networkInternals) {
+		result = net.RemovePeerByID(peerID)
+	})
+	return
 }
 
 func SetCTXNetwork(ctx *gin.Context, net *network) {

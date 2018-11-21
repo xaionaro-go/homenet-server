@@ -9,9 +9,10 @@ import (
 
 type peer struct {
 	// this is supposed to be private (non-changable directly from an outside code) but serializable variables. So they're prefixed with "XxX_" to remind users to do not access them directly
-	XxX_ID   string `json:"id"`
-	XxX_Name string `json:"name"`
-	XxX_Host net.IP `json:"host"`
+	XxX_ID       string `json:"id"`
+	XxX_Name     string `json:"name"`
+	XxX_Host     net.IP `json:"host"`
+	XxX_IntAlias uint32 `json:"int_alias"` // this value is used to generate a persistent IP-address
 
 	network *network
 }
@@ -32,14 +33,22 @@ func (p *peer) GetID() string {
 func (p *peer) IGetID() interface{} {
 	return p.GetID()
 }
+func (p *peer) GetIntAlias() uint32 {
+	return p.XxX_IntAlias
+}
+func (p *peer) SetIntAlias(newIntAlias uint32) {
+	p.XxX_IntAlias = newIntAlias
+}
 
 func (p *peer) SetName(name string) {
 	p.XxX_Name = name
 }
 
-func (p *peer) SetNetwork(net *network) {
+func (p *peer) SetNetwork(net *network) error {
 	p.network = net
-	net.appendPeerIfNotExists(p)
+
+	net.AppendPeerIfNotExists(p)
+	return nil
 }
 
 func (p *peer) SetAddressByString(address string) {

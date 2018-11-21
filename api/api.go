@@ -12,7 +12,7 @@ import (
 
 var (
 	networkIDCannotBeEmpty = errors.InvalidArguments.New("networkID cannot be empty")
-	peerIDCannotBeEmpty = errors.InvalidArguments.New("peerID cannot be empty")
+	peerIDCannotBeEmpty    = errors.InvalidArguments.New("peerID cannot be empty")
 )
 
 type api struct {
