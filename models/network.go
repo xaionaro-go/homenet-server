@@ -18,7 +18,7 @@ import (
 type networkInternals struct {
 	// this is supposed to be private (non-changable directly from an outside code) but serializable variables. So they're prefixed with "XxX_" to remind users to do not access them directly
 	XxX_ID           string `json:"id"`
-	XxX_PasswordHash string `json:"password_hash"`
+	XxX_PasswordHash []byte `json:"password_hash"`
 
 	peers       Peers
 	intAliasMap atomicmap.Map
@@ -27,7 +27,7 @@ type networkInternals struct {
 type network struct {
 	mutex sync.Mutex
 
-	networkInternals
+	XxX_Internals networkInternals `json:"networkData"`
 }
 
 type NetworkT = network
@@ -39,7 +39,7 @@ func NewNetwork(id string) (*network, error) {
 		return nil, errors.NewAlreadyExists(oldNet)
 	}
 	newNet := &network{
-		networkInternals: networkInternals{
+		XxX_Internals: networkInternals{
 			XxX_ID:      id,
 			intAliasMap: atomicmap.New(),
 		},
@@ -55,14 +55,14 @@ func (net *network) Lock(fn func(*networkInternals)) {
 			net.mutex.Unlock()
 		}
 	}() // defer is slow, so to unlock the network earlier we try to unlock it outside of the defer func. However if we got a panic then we need to recover and to unlock the network.
-	fn(&net.networkInternals)
+	fn(&net.XxX_Internals)
 	net.mutex.Unlock()
 }
 
-func (net *networkInternals) GetPasswordHash() string {
+func (net *networkInternals) GetPasswordHash() []byte {
 	return net.XxX_PasswordHash
 }
-func (net *network) GetPasswordHash() (result string) {
+func (net *network) GetPasswordHash() (result []byte) {
 	net.Lock(func(net *networkInternals) {
 		result = net.GetPasswordHash()
 	})
@@ -85,24 +85,24 @@ func (net *network) IGetID() interface{} {
 	return net.GetID()
 }
 
-func (net *networkInternals) SetPasswordHash(newPasswordHash string) *networkInternals {
+func (net *networkInternals) SetPasswordHash(newPasswordHash []byte) *networkInternals {
 	// Yes we double-hashing the password:
 	// - The first time on the client side.
 	// - The second time on our side.
-	net.XxX_PasswordHash = string(helpers.Hash([]byte(newPasswordHash)))
+	net.XxX_PasswordHash = helpers.Hash(newPasswordHash)
 	return net
 }
-func (net *network) SetPasswordHash(newPasswordHash string) *network {
+func (net *network) SetPasswordHash(newPasswordHash []byte) *network {
 	net.Lock(func(net *networkInternals) {
 		net.SetPasswordHash(newPasswordHash)
 	})
 	return net
 }
 
-func (net *networkInternals) CheckPasswordHash(passwordHash string) bool {
-	return helpers.CheckHash([]byte(net.GetPasswordHash()), []byte(passwordHash))
+func (net *networkInternals) CheckPasswordHash(passwordHash []byte) bool {
+	return helpers.CheckHash(net.GetPasswordHash(), passwordHash)
 }
-func (net *network) CheckPasswordHash(passwordHash string) (result bool) {
+func (net *network) CheckPasswordHash(passwordHash []byte) (result bool) {
 	net.Lock(func(net *networkInternals) {
 		result = net.CheckPasswordHash(passwordHash)
 	})
@@ -135,8 +135,8 @@ func (net *network) GetPeerByID(peerID string) (result *peer) {
 }
 
 func (net *network) SaveToDisk() error {
-	net.Lock(func(net *networkInternals) {
-		storage.GetSavingQueue() <- &[]networkInternals{*net}[0] // copy and send to the queue
+	net.Lock(func(netInternals *networkInternals) {
+		storage.GetSavingQueue() <- &[]network{*net}[0] // copy and send to the queue
 	})
 	return nil
 }

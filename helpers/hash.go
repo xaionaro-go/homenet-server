@@ -22,12 +22,20 @@ func Hash(in []byte) []byte {
 		logrus.Errorf("Cannot generate a random salt: n == %d; err == %s", n, err)
 		salt = defaultSalt
 	}
-	sum := sha512.Sum512(append(salt, in...))
-	return append(salt, sum[:]...)
+	key := make([]byte, saltSize+len(in))
+	copy(key, salt)
+	key = append(key, in...)
+	sum := sha512.Sum512(key)
+	hash := append(salt, sum[:]...)
+	return hash
 }
 
 func CheckHash(hash, check []byte) bool {
-	salt := hash[:8]
-	sum := sha512.Sum512(append(salt, check...))
-	return string(sum[:]) == string(hash[8:])
+	salt := hash[:saltSize]
+	oldSum := hash[saltSize:]
+	key := make([]byte, saltSize+len(check))
+	copy(key, salt)
+	key = append(key, check...)
+	sum := sha512.Sum512(key)
+	return string(sum[:]) == string(oldSum)
 }

@@ -12,10 +12,9 @@ import (
 func GetNetwork() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		netID := ctx.Param("net")
-		passwordHash := ctx.Param("password_hash")
-		if passwordHash == "" {
-			passwordHashB, _ := base64.StdEncoding.DecodeString(ctx.Request.Header.Get("X-Homenet-Accesshash"))
-			passwordHash = string(passwordHashB)
+		passwordHash := []byte(ctx.Param("password_hash"))
+		if len(passwordHash) == 0 {
+			passwordHash, _ = base64.StdEncoding.DecodeString(ctx.Request.Header.Get("X-Homenet-Accesshash"))
 		}
 
 		net, err := models.Network().Get(netID)

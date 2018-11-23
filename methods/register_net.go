@@ -17,10 +17,9 @@ func RegisterNet(ctx *gin.Context) {
 		return
 	}
 
-	passwordHash := ctx.Param("password_hash")
-	if passwordHash == "" {
-		passwordHashB, _ := base64.StdEncoding.DecodeString(ctx.Request.Header.Get("X-Homenet-Accesshash"))
-		passwordHash = string(passwordHashB)
+	passwordHash := []byte(ctx.Param("password_hash"))
+	if len(passwordHash) == 0 {
+		passwordHash, _ = base64.StdEncoding.DecodeString(ctx.Request.Header.Get("X-Homenet-Accesshash"))
 	}
 
 	network.SetPasswordHash(passwordHash)
