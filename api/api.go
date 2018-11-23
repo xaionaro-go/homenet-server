@@ -1,6 +1,7 @@
 package api
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -9,6 +10,8 @@ import (
 	"net/url"
 
 	"github.com/xaionaro-go/errors"
+
+	"github.com/xaionaro-go/homenet-server/helpers"
 )
 
 var (
@@ -22,7 +25,7 @@ type loggers struct {
 
 type api struct {
 	urlRoot      string
-	passwordHash string
+	passwordHash []byte
 
 	logger loggers
 }
@@ -52,7 +55,7 @@ func (answer *answerCommon) GetErrorDescription() string {
 func New(urlRoot, passwordHash string, options ...Option) *api {
 	result := &api{
 		urlRoot:      urlRoot,
-		passwordHash: passwordHash,
+		passwordHash: helpers.Hash([]byte(passwordHash)),
 	}
 
 	for _, optI := range options {
@@ -88,6 +91,7 @@ func (api *api) query(result answer, method, uri string, options ...map[string]i
 	if err != nil {
 		return 0, err
 	}
+	req.Header.Set("X-Homenet-Accesshash", base64.StdEncoding.EncodeToString(api.passwordHash))
 	client := &http.Client{}
 	api.ifDebug(func(log logger) {
 		if dump, err := httputil.DumpRequestOut(req, true); err == nil {
