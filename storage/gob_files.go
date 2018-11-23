@@ -130,6 +130,15 @@ func restore(storage atomicmap.Map, typeName string) error {
 		return err
 	}
 
+	// Call AfterRestore()
+	for _, objI := range stdMap {
+		obj := objI.(interface{ AfterRestore() error })
+		err := obj.AfterRestore()
+		if err != nil {
+			return err
+		}
+	}
+
 	storage.FromSTDMap(stdMap)
 	return nil
 }

@@ -40,12 +40,20 @@ func NewNetwork(id string) (*network, error) {
 	}
 	newNet := &network{
 		XxX_Internals: networkInternals{
-			XxX_ID:      id,
-			intAliasMap: atomicmap.New(),
+			XxX_ID: id,
 		},
 	}
+	newNet.XxX_Internals.AfterRestore()
 	Network().Set(newNet)
 	return newNet, nil
+}
+
+func (net *networkInternals) AfterRestore() error {
+	net.intAliasMap = atomicmap.New()
+	return nil
+}
+func (net *network) AfterRestore() error {
+	return net.XxX_Internals.AfterRestore()
 }
 
 func (net *network) Lock(fn func(*networkInternals)) {
@@ -53,6 +61,7 @@ func (net *network) Lock(fn func(*networkInternals)) {
 	defer func() {
 		if r := recover(); r != nil {
 			net.mutex.Unlock()
+			logrus.Panicln(r)
 		}
 	}() // defer is slow, so to unlock the network earlier we try to unlock it outside of the defer func. However if we got a panic then we need to recover and to unlock the network.
 	fn(&net.XxX_Internals)
