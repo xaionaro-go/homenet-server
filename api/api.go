@@ -99,6 +99,14 @@ func (api *api) query(result answer, method, uri string, options ...map[string]i
 		}
 	})
 	resp, err := client.Do(req)
+	api.ifDebug(func(log logger) {
+		if resp == nil {
+			return
+		}
+		if dump, err := httputil.DumpResponse(resp, true); err == nil {
+			log.Printf("API-response: %v", string(dump))
+		}
+	})
 	if err != nil {
 		return 0, err
 	}
@@ -107,11 +115,6 @@ func (api *api) query(result answer, method, uri string, options ...map[string]i
 	if err != nil {
 		return 0, err
 	}
-	api.ifDebug(func(log logger) {
-		if dump, err := httputil.DumpResponse(resp, true); err == nil {
-			log.Printf("API-response: %v", string(dump))
-		}
-	})
 
 	err = json.Unmarshal(body, &result)
 	if err != nil {
