@@ -4,7 +4,7 @@ import (
 	"net"
 	//"strconv"
 
-	"github.com/Sirupsen/logrus"
+	//"github.com/Sirupsen/logrus"
 )
 
 type peer struct {
@@ -55,7 +55,8 @@ func (p *peer) SetAddressByString(address string) {
 	//host, portString, err := net.SplitHostPort(address)
 	host, _, err := net.SplitHostPort(address)
 	if err != nil {
-		logrus.Panicf("This shouldn't happened #0 (%v): %v", address, err)
+		//logrus.Panicf("This shouldn't happened #0 (%v): %v", address, err)
+		host = address
 	}
 	p.XxX_Host = net.ParseIP(host)
 	/*port64, err := strconv.ParseInt(portString, 10, 17)
