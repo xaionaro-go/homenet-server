@@ -172,7 +172,11 @@ func (net *networkInternals) AppendPeerIfNotExists(peer *peer) (bool, error) {
 	}
 
 	if peer.GetIntAlias() == 0 {
-		peer.SetIntAlias(net.FindFreePeerIntAlias())
+		freeIntAlias := net.FindFreePeerIntAlias()
+		if freeIntAlias == 0 {
+			return false, errors.NewIntAliasIsBusy(0, net).Wrap()
+		}
+		peer.SetIntAlias(freeIntAlias)
 	} else {
 		anotherPeer := net.GetPeerByIntAlias(peer.GetIntAlias())
 		if anotherPeer != nil {

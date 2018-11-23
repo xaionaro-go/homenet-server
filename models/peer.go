@@ -3,7 +3,6 @@ package models
 import (
 	"net"
 	//"strconv"
-
 	//"github.com/Sirupsen/logrus"
 )
 
