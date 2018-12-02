@@ -19,9 +19,9 @@ func SetNegotiationMessage(ctx *gin.Context) {
 		peerIDTo,
 	)
 
-	ctx.BindJSON(&negotiationMessage)
+	ctx.BindJSON(negotiationMessage)
 
-	if err := negotiationMessage.Save(); err != nil {
+	if err := network.SetNegotiationMessage(negotiationMessage); err != nil {
 		returnError(ctx, errors.NewCannotSave(negotiationMessage, err))
 		return
 	}

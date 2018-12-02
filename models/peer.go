@@ -99,7 +99,6 @@ func (p *peer) SetNetwork(net *network) error {
 
 	_, err := net.AppendPeerIfNotExists(p)
 	p.updated()
-	negotiationMessagesCreateMapForPeer(p.Copy())
 	return errors.Wrap(err)
 }
 

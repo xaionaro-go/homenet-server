@@ -3,10 +3,6 @@ package models
 import (
 	"net"
 	"time"
-
-	"github.com/xaionaro-go/atomicmap"
-
-	"github.com/xaionaro-go/homenet-server/errors"
 )
 
 type negotiationMessage struct {
@@ -19,6 +15,8 @@ type negotiationMessage struct {
 	CreatedAt    time.Time `json:"created_at"`
 }
 
+type NegotiationMessageT negotiationMessage
+
 func NewNegotiationMessage(networkID, peerIDFrom, peerIDTo string) *negotiationMessage {
 	return &negotiationMessage{
 		NetworkID:  networkID,
@@ -27,33 +25,17 @@ func NewNegotiationMessage(networkID, peerIDFrom, peerIDTo string) *negotiationM
 	}
 }
 
-var negotiationMessagesMap = atomicmap.New()
-
-func negotiationMessagesCreateMapForPeer(p *peer) error {
-	net := p.GetNetwork()
-	key := net.GetID() + "/" + p.GetID()
-	negotiationMessagesMap.Set(key, atomicmap.NewWithArgs(uint64(net.PeersLimit()), nil))
-	return nil
-}
-
-func (msg *negotiationMessage) GetMapKey() string {
-	return msg.NetworkID + "/" + msg.PeerIDTo
-}
-
 func (msg *negotiationMessage) GetID() string {
-	return msg.GetMapKey() + "/" + msg.PeerIDFrom
+	return msg.NetworkID + "/" + msg.PeerIDTo + "/" + msg.PeerIDFrom
 }
 func (msg *negotiationMessage) IGetID() interface{} {
 	return msg.GetID()
 }
 
-func (msg *negotiationMessage) Save() error {
-	mI, _ := negotiationMessagesMap.Get(msg.GetMapKey)
-	if mI == nil {
-		return errors.NewGetObjectNotFound(&peer{}, msg.PeerIDTo, "networkID:"+msg.NetworkID, "negotiationMessage storage")
-	}
-	m := mI.(atomicmap.Map)
+type negotiationMessageModel struct {
+	negotiationMessage
+}
 
-	m.Set(msg.PeerIDFrom, *msg)
-	return nil
+func NegotiationMessage() negotiationMessageModel {
+	return negotiationMessageModel{}
 }

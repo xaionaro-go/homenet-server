@@ -30,7 +30,7 @@ func main() {
 	netAuthed.PUT("/peers/:id", methods.RegisterPeer)
 	netAuthed.DELETE("/peers/:id", methods.UnregisterPeer)
 	netAuthed.PUT("/negotiationMessage/:peer_id_to/:peer_id_from", methods.SetNegotiationMessage)
-	//netAuthed.GET("/negotiationMessage/:peer_id_to", methods.GetNegotiationMessages)
-	//netAuthed.GET("/negotiationMessage/:peer_id_to/:peer_id_from", methods.GetNegotiationMessage)
+	netAuthed.GET("/negotiationMessage/:peer_id_to", methods.GetNegotiationMessages)
+	netAuthed.GET("/negotiationMessage/:peer_id_to/:peer_id_from", methods.GetNegotiationMessage)
 	fatalIfError(router.Run())
 }

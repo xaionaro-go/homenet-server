@@ -20,8 +20,9 @@ type networkInternals struct {
 	XxX_ID           string `json:"id"`
 	XxX_PasswordHash []byte `json:"password_hash"`
 
-	peers       Peers
-	intAliasMap atomicmap.Map
+	peers                  Peers
+	intAliasMap            atomicmap.Map
+	negotiationMessagesMap atomicmap.Map
 }
 
 type network struct {
@@ -50,6 +51,7 @@ func NewNetwork(id string) (*network, error) {
 
 func (net *networkInternals) AfterRestore() error {
 	net.intAliasMap = atomicmap.New()
+	net.negotiationMessagesMap = atomicmap.New()
 	return nil
 }
 func (net *network) AfterRestore() error {
@@ -167,6 +169,17 @@ func (net *network) peersCount() (result uint32) {
 	return
 }
 
+func (net *networkInternals) GetNegotiationMessagesMap(peerIDTo string) atomicmap.Map {
+	r, _ := net.negotiationMessagesMap.Get(peerIDTo)
+	if r == nil {
+		return nil
+	}
+	return r.(atomicmap.Map)
+}
+func (net *network) GetNegotiationMessagesMap(peerIDTo string) atomicmap.Map {
+	return net.XxX_Internals.GetNegotiationMessagesMap(peerIDTo)
+}
+
 func (net *networkInternals) AppendPeerIfNotExists(peer *peer) (bool, error) {
 	if net.PeersCount() >= net.PeersLimit() {
 		return false, errors.NewTooManyPeers(net).Wrap()
@@ -195,6 +208,7 @@ func (net *networkInternals) AppendPeerIfNotExists(peer *peer) (bool, error) {
 
 	net.peers = append(net.peers, peer)
 	net.intAliasMap.Set(peer.GetIntAlias(), peer)
+	net.negotiationMessagesMap.Set(peer.GetID(), atomicmap.New())
 	return true, nil
 }
 
@@ -287,6 +301,21 @@ func (net *network) RemovePeerByID(peerID string) (result bool) {
 		result = net.RemovePeerByID(peerID)
 	})
 	return
+}
+
+func (net *networkInternals) SetNegotiationMessage(msg *negotiationMessage) error {
+	mI, _ := net.negotiationMessagesMap.Get(msg.PeerIDTo)
+	if mI == nil {
+		return errors.NewGetObjectNotFound(&peer{}, msg.PeerIDTo, "networkID:"+net.GetID(), "network's internals")
+	}
+	m := mI.(atomicmap.Map)
+
+	m.Set(msg.PeerIDFrom, *msg)
+	return nil
+}
+
+func (net *network) SetNegotiationMessage(msg *negotiationMessage) error {
+	return net.XxX_Internals.SetNegotiationMessage(msg)
 }
 
 func SetCTXNetwork(ctx *gin.Context, net *network) {
