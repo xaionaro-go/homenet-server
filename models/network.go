@@ -119,7 +119,7 @@ func (net *network) CheckPasswordHash(passwordHash []byte) (result bool) {
 }
 
 func (net *networkInternals) GetPeers() Peers {
-	return net.peers
+	return net.peers.Copy()
 }
 func (net *network) GetPeers() (result Peers) {
 	net.Lock(func(net *networkInternals) {

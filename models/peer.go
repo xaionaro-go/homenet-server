@@ -31,6 +31,31 @@ func NewPeer(id string) *peer {
 
 type Peers []*peer
 
+func (p *peer) Copy() *peer {
+	c := &peer{
+		XxX_ID:       p.GetID(),
+		XxX_Name:     &[]string{p.GetName()}[0],
+		XxX_Host:     &[]net.IP{p.GetHost()}[0],
+		XxX_IntAlias: p.GetIntAlias(),
+		updatedAt:    &[]time.Time{p.GetUpdatedAt()}[0],
+		network:      p.GetNetwork(),
+	}
+	return c
+}
+func (peers Peers) Copy() Peers {
+	c := make(Peers, len(peers))
+	for idx, peer := range peers {
+		c[idx] = peer.Copy()
+	}
+	return c
+}
+
+func (p *peer) GetUpdatedAt() time.Time {
+	if p.updatedAt == nil {
+		return time.Now()
+	}
+	return *(*time.Time)(atomic.LoadPointer((*unsafe.Pointer)((unsafe.Pointer)(&p.updatedAt))))
+}
 func (p *peer) updated() {
 	atomic.StorePointer((*unsafe.Pointer)((unsafe.Pointer)(&p.updatedAt)), (unsafe.Pointer)(&[]time.Time{time.Now()}[0]))
 }
@@ -60,6 +85,12 @@ func (p *peer) SetName(name string) {
 	p.updated()
 }
 
+func (p *peer) GetNetwork() *network {
+	if p.network == nil {
+		return nil
+	}
+	return *(**network)(atomic.LoadPointer((*unsafe.Pointer)((unsafe.Pointer)(&p.network))))
+}
 func (p *peer) SetNetwork(net *network) error {
 	if p.network != nil {
 		return errors.NewNotImplemented("Cannot update network of a peer").Wrap()
