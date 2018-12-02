@@ -18,6 +18,12 @@ func GetNegotiationMessages(ctx *gin.Context) {
 		return
 	}
 
-	returnSuccess(ctx, msgMap.ToSTDMap())
+	msgMapStd := msgMap.ToSTDMap()
+	msgMapSerializable := map[string]models.NegotiationMessageT{}
+	for k, v := range msgMapStd {
+		msgMapSerializable[k.(string)] = v.(models.NegotiationMessageT)
+	}
+
+	returnSuccess(ctx, msgMapSerializable)
 	return
 }
