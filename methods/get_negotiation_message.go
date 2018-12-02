@@ -8,7 +8,7 @@ import (
 )
 
 func GetNegotiationMessage(ctx *gin.Context) {
-	peerIDTo := ctx.Param("peeer_id_to")
+	peerIDTo := ctx.Param("peer_id_to")
 	peerIDFrom := ctx.Param("peer_id_from")
 
 	network := models.GetCTXNetwork(ctx)
