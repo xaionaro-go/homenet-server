@@ -27,6 +27,6 @@ func (api *api) RegisterPeer(networkID, peerID, peerName string) (int, *models.P
 	if peerName != "" {
 		params["peer_name"] = peerName
 	}
-	statusCode, err := api.PUT(&answer, fmt.Sprintf("%s/peers/%s", networkID, peerID), params)
+	statusCode, err := api.PUT(&answer, fmt.Sprintf("%s/peers/%s", networkID, peerID), nil, params)
 	return statusCode, &answer.Result, errors.Wrap(err)
 }

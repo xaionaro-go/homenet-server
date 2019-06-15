@@ -19,6 +19,6 @@ func (api *api) RegisterNet(networkID string) (int, *models.NetworkT, error) {
 	}
 
 	var answer registerNetAnswer
-	statusCode, err := api.PUT(&answer, fmt.Sprintf("%s", networkID))
+	statusCode, err := api.PUT(&answer, fmt.Sprintf("%s", networkID), nil)
 	return statusCode, &answer.Result, errors.Wrap(err)
 }

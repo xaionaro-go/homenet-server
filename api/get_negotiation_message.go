@@ -13,12 +13,12 @@ type getNegotiationMessageAnswer struct {
 	Result models.NegotiationMessageT
 }
 
-func (api *api) GetNegotiationMessage(networkID, peerIDTo, peerIDFrom string) (int, models.NegotiationMessageT, error) {
+func (api *api) GetNegotiationMessage(networkID, peerIDTo, peerIDFrom string) (int, *models.NegotiationMessageT, error) {
 	if len(networkID) == 0 {
-		return 0, models.NegotiationMessageT{}, networkIDCannotBeEmpty.Wrap()
+		return 0, nil, networkIDCannotBeEmpty.Wrap()
 	}
 
 	var answer getNegotiationMessageAnswer
 	statusCode, err := api.GET(&answer, fmt.Sprintf("%s/negotiationMessage/%s/%s", networkID, peerIDTo, peerIDFrom))
-	return statusCode, answer.Result, errors.Wrap(err)
+	return statusCode, &answer.Result, errors.Wrap(err)
 }

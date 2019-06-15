@@ -1,9 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
@@ -77,7 +79,7 @@ func (api *api) ifDebug(fn func(logger)) {
 	fn(api.logger.debug)
 }
 
-func (api *api) query(result answer, method, uri string, options ...map[string]interface{}) (resultStatusCode int, resultErr error) {
+func (api *api) query(result answer, method, uri string, bodyReader io.Reader , options ...map[string]interface{}) (resultStatusCode int, resultErr error) {
 	var body []byte
 	defer func() { resultErr = errors.Wrap(resultErr, `JSON-message:"`+string(body)+`"`) }()
 
@@ -87,7 +89,7 @@ func (api *api) query(result answer, method, uri string, options ...map[string]i
 			v.Add(paramName, fmt.Sprintf("%v", paramValue))
 		}
 	}
-	req, err := http.NewRequest(method, api.urlRoot+uri+"?"+v.Encode(), nil)
+	req, err := http.NewRequest(method, api.urlRoot+uri+"?"+v.Encode(), bodyReader)
 	if err != nil {
 		return 0, err
 	}
@@ -124,15 +126,15 @@ func (api *api) query(result answer, method, uri string, options ...map[string]i
 }
 
 func (api *api) GET(result answer, uri string, options ...map[string]interface{}) (int, error) {
-	return api.query(result, `GET`, uri, options...)
+	return api.query(result, `GET`, uri, nil, options...)
 }
 
-func (api *api) PUT(result answer, uri string, options ...map[string]interface{}) (int, error) {
-	return api.query(result, `PUT`, uri, options...)
+func (api *api) PUT(result answer, uri string, body io.Reader, options ...map[string]interface{}) (int, error) {
+	return api.query(result, `PUT`, uri, body, options...)
 }
 
 func (api *api) DELETE(result answer, uri string, options ...map[string]interface{}) (int, error) {
-	return api.query(result, `DELETE`, uri, options...)
+	return api.query(result, `DELETE`, uri, nil, options...)
 }
 
 func (api *api) wrapResultError(errorDescription string, args ...interface{}) error {
@@ -140,4 +142,11 @@ func (api *api) wrapResultError(errorDescription string, args ...interface{}) er
 		return nil
 	}
 	return errors.New(errorDescription, args...)
+}
+func (api *api) messageToReader(msg interface{}) io.Reader {
+	b, err := json.Marshal(msg)
+	if err != nil {
+		panic(err)
+	}
+	return bytes.NewBuffer(b)
 }
