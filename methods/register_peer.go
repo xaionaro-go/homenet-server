@@ -41,7 +41,7 @@ func RegisterPeer(ctx *gin.Context) {
 	}
 
 	peer.SetAddressByString(address)
-	peer.SetPublicKey(publicKey)
+	peer.SetPublicKey(publicKey[:])
 	if peerName != "" {
 		peer.SetName(peerName)
 	}
