@@ -19,6 +19,7 @@ import (
 var (
 	networkIDCannotBeEmpty = errors.InvalidArguments.New("networkID cannot be empty")
 	peerIDCannotBeEmpty    = errors.InvalidArguments.New("peerID cannot be empty")
+	invalidPublicKey       = errors.InvalidArguments.New("invalid public key")
 )
 
 type loggers struct {
