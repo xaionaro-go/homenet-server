@@ -13,13 +13,12 @@ func SetNegotiationMessage(ctx *gin.Context) {
 
 	network := models.GetCTXNetwork(ctx)
 
-	negotiationMessage := models.NewNegotiationMessage(
-		network.GetID(),
-		peerIDFrom,
-		peerIDTo,
-	)
+	negotiationMessage := models.NewNegotiationMessage()
 
 	ctx.BindJSON(negotiationMessage)
+	negotiationMessage.NetworkID = network.GetID()
+	negotiationMessage.PeerIDFrom = peerIDFrom
+	negotiationMessage.PeerIDTo = peerIDTo
 
 	if err := network.SetNegotiationMessage(negotiationMessage); err != nil {
 		returnError(ctx, errors.NewCannotSave(negotiationMessage, err))

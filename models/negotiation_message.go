@@ -23,12 +23,8 @@ type negotiationMessage struct {
 
 type NegotiationMessageT negotiationMessage
 
-func NewNegotiationMessage(networkID, peerIDFrom, peerIDTo string) *negotiationMessage {
-	return &negotiationMessage{
-		NetworkID:  networkID,
-		PeerIDFrom: peerIDFrom,
-		PeerIDTo:   peerIDTo,
-	}
+func NewNegotiationMessage() *negotiationMessage {
+	return &negotiationMessage{}
 }
 
 func (msg *negotiationMessage) GetID() string {
