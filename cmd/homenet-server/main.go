@@ -32,5 +32,5 @@ func main() {
 	netAuthed.PUT("/negotiationMessage/:peer_id_to/:peer_id_from", methods.SetNegotiationMessage)
 	netAuthed.GET("/negotiationMessage/:peer_id_to", methods.GetNegotiationMessages)
 	netAuthed.GET("/negotiationMessage/:peer_id_to/:peer_id_from", methods.GetNegotiationMessage)
-	fatalIfError(router.Run())
+	fatalIfError(router.Run(":80"))
 }

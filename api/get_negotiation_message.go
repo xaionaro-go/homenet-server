@@ -10,10 +10,10 @@ import (
 
 type getNegotiationMessageAnswer struct {
 	answerCommon
-	Result models.NegotiationMessageT
+	Result models.NegotiationMessage
 }
 
-func (api *api) GetNegotiationMessage(networkID, peerIDTo, peerIDFrom string) (int, *models.NegotiationMessageT, error) {
+func (api *api) GetNegotiationMessage(networkID, peerIDTo, peerIDFrom string) (int, *models.NegotiationMessage, error) {
 	if len(networkID) == 0 {
 		return 0, nil, networkIDCannotBeEmpty.Wrap()
 	}

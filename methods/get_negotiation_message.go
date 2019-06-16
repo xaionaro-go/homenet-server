@@ -15,13 +15,13 @@ func GetNegotiationMessage(ctx *gin.Context) {
 
 	msgMap := network.GetNegotiationMessagesMap(peerIDTo)
 	if msgMap == nil {
-		returnError(ctx, errors.NewGetObjectNotFound(models.NegotiationMessage(), peerIDTo, network))
+		returnError(ctx, errors.NewGetObjectNotFound(&models.NegotiationMessage{}, peerIDTo, network))
 		return
 	}
 
 	msg, _ := msgMap.Get(peerIDFrom)
 	if msg == nil {
-		returnError(ctx, errors.NewGetObjectNotFound(models.NegotiationMessage(), peerIDFrom, network, peerIDTo))
+		returnError(ctx, errors.NewGetObjectNotFound(&models.NegotiationMessage{}, peerIDFrom, network, peerIDTo))
 		return
 	}
 

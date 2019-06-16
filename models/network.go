@@ -303,7 +303,7 @@ func (net *network) RemovePeerByID(peerID string) (result bool) {
 	return
 }
 
-func (net *networkInternals) SetNegotiationMessage(msg *negotiationMessage) error {
+func (net *networkInternals) SetNegotiationMessage(msg *NegotiationMessage) error {
 	mI, _ := net.negotiationMessagesMap.Get(msg.PeerIDTo)
 	if mI == nil {
 		return errors.NewGetObjectNotFound(&peer{}, msg.PeerIDTo, "networkID:"+net.GetID(), "network's internals")
@@ -314,7 +314,7 @@ func (net *networkInternals) SetNegotiationMessage(msg *negotiationMessage) erro
 	return nil
 }
 
-func (net *network) SetNegotiationMessage(msg *negotiationMessage) error {
+func (net *network) SetNegotiationMessage(msg *NegotiationMessage) error {
 	return net.XxX_Internals.SetNegotiationMessage(msg)
 }
 

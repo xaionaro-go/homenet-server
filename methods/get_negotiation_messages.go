@@ -14,14 +14,14 @@ func GetNegotiationMessages(ctx *gin.Context) {
 
 	msgMap := network.GetNegotiationMessagesMap(peerIDTo)
 	if msgMap == nil {
-		returnError(ctx, errors.NewGetObjectNotFound(models.NegotiationMessage(), peerIDTo, network))
+		returnError(ctx, errors.NewGetObjectNotFound(&models.NegotiationMessage{}, peerIDTo, network))
 		return
 	}
 
 	msgMapStd := msgMap.ToSTDMap()
-	msgMapSerializable := map[string]models.NegotiationMessageT{}
+	msgMapSerializable := map[string]models.NegotiationMessage{}
 	for k, v := range msgMapStd {
-		msgMapSerializable[k.(string)] = v.(models.NegotiationMessageT)
+		msgMapSerializable[k.(string)] = v.(models.NegotiationMessage)
 	}
 
 	returnSuccess(ctx, msgMapSerializable)
