@@ -1,6 +1,7 @@
 package models
 
 import (
+	"golang.org/x/crypto/ed25519"
 	"net"
 	"sync/atomic"
 	"time"
@@ -11,10 +12,11 @@ import (
 
 type peer struct {
 	// this is supposed to be private (non-changable directly from an outside code) but serializable variables. So they're prefixed with "XxX_" to remind users to do not access them directly
-	XxX_ID       string  `json:"id"`
-	XxX_Name     *string `json:"name"`
-	XxX_Host     *net.IP `json:"host"`
-	XxX_IntAlias uint32  `json:"int_alias"` // this value is used to generate a persistent IP-address
+	XxX_ID        string            `json:"id"`
+	XxX_Name      *string           `json:"name"`
+	XxX_Host      *net.IP           `json:"host"`
+	XxX_IntAlias  uint32            `json:"int_alias"` // this value is used to generate a persistent IP-address
+	XxX_PublicKey ed25519.PublicKey `json:"public_key"`
 
 	updatedAt *time.Time
 	network   *network
@@ -73,6 +75,13 @@ func (p *peer) SetIntAlias(newIntAlias uint32) {
 	atomic.StoreUint32(&p.XxX_IntAlias, newIntAlias)
 	p.updated()
 }
+func (p *peer) GetPublicKey() ed25519.PublicKey {
+	return p.XxX_PublicKey
+}
+func (p *peer) SetPublicKey(newPubKey ed25519.PublicKey) {
+	p.XxX_PublicKey = newPubKey
+	p.updated()
+}
 func (p *peer) GetName() string {
 	if p.XxX_Name == nil {
 		return ""
@@ -128,7 +137,7 @@ func (p *peer) SetAddressByString(address string) {
 
 func (p *peer) Save() error {
 	// We don't support peer saving, yet.
-	// And it's not so required, actuallity. Clients will resend peers information every 10-60 seconds,
+	// And it's not so required, actually. Clients will resend peers information every 10-60 seconds,
 	// so the information will be restored very soon after a restart.
 	return nil
 }

@@ -79,7 +79,7 @@ func (api *api) ifDebug(fn func(logger)) {
 	fn(api.logger.debug)
 }
 
-func (api *api) query(result answer, method, uri string, bodyReader io.Reader , options ...map[string]interface{}) (resultStatusCode int, resultErr error) {
+func (api *api) query(result answer, method, uri string, bodyReader io.Reader, options ...map[string]interface{}) (resultStatusCode int, resultErr error) {
 	var body []byte
 	defer func() { resultErr = errors.Wrap(resultErr, `JSON-message:"`+string(body)+`"`) }()
 
