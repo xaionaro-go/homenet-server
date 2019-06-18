@@ -32,8 +32,12 @@ func (api *api) RegisterPeer(networkID, peerID, peerName string, publicKey ed255
 		params["peer_name"] = peerName
 	}
 
+	// By some unknown reason the builtin Golang's base64 encoder encodes incorrectly if the length is 32
+	publicKeyPadded := make([]byte, 36)
+	copy(publicKeyPadded[:], publicKey[:])
+
 	var publicKeyBuf bytes.Buffer
-	_, err := base64.NewEncoder(base64.URLEncoding, &publicKeyBuf).Write(publicKey[:])
+	_, err := base64.NewEncoder(base64.URLEncoding, &publicKeyBuf).Write(publicKeyPadded)
 	if err != nil {
 		return 0, nil, invalidPublicKey.Wrap(err)
 	}

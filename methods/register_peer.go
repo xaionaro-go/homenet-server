@@ -18,7 +18,8 @@ func RegisterPeer(ctx *gin.Context) {
 
 	publicKeyDecoder := base64.NewDecoder(base64.URLEncoding, bytes.NewReader([]byte(publicKeyEncoded)))
 
-	var publicKey [secureio.PublicKeySize]byte
+	// By some unknown reason the builtin Golang's base64 encoder encodes incorrectly if the length is 32, so "+4"
+	var publicKey [secureio.PublicKeySize + 4]byte
 	_, err := publicKeyDecoder.Read(publicKey[:])
 	if err != nil {
 		returnError(ctx, errors.NewUnableToParse(fmt.Errorf("invalid public key: %v", err)))
@@ -41,7 +42,7 @@ func RegisterPeer(ctx *gin.Context) {
 	}
 
 	peer.SetAddressByString(address)
-	peer.SetPublicKey(publicKey[:])
+	peer.SetPublicKey(publicKey[:secureio.PublicKeySize])
 	if peerName != "" {
 		peer.SetName(peerName)
 	}
